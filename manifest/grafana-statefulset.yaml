@@ -1,0 +1,118 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: $APP_INSTANCE_NAME-grafana
+  labels: &Labels
+    k8s-app: grafana
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: grafana
+spec:
+  serviceName: $APP_INSTANCE_NAME-grafana
+  replicas: 1
+  selector:
+    matchLabels: *Labels
+  template:
+    metadata:
+      labels: *Labels
+    spec:
+      serviceAccountName: grafana
+      # Configure an init container that will `chmod 777` Grafana's data directory 
+      # and volume before the main Grafana container starts up. 
+      # To learn more about init containers, consult https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+      # from the official Kubernetes docs.
+      initContainers:
+          - name: "init-chmod-data"
+            image: debian:9
+            imagePullPolicy: "IfNotPresent"
+            command: ["chmod", "777", "/var/lib/grafana"]
+            volumeMounts:
+            - name: $APP_INSTANCE_NAME-grafana-data
+              mountPath: "/var/lib/grafana"
+      containers:
+        - name: grafana
+          # The main Grafana container, which uses the `grafana/grafana:6.0.1` image 
+          # from https://hub.docker.com/r/grafana/grafana
+          image: grafana/grafana:6.0.1
+          imagePullPolicy: Always
+          # Mount in all the previously defined ConfigMaps as `volumeMounts`
+          # as well as the Grafana data volume
+          volumeMounts:
+            - name: config
+              mountPath: "/etc/grafana/"
+            - name: dashboards
+              mountPath: "/var/lib/grafana/dashboards"
+            - name: datasources
+              mountPath: "/etc/grafana/provisioning/datasources/"
+            - name: dashboardproviders
+              mountPath: "/etc/grafana/provisioning/dashboards/"
+            - name: $APP_INSTANCE_NAME-grafana-data
+              mountPath: "/var/lib/grafana"
+          ports:
+            - name: service
+              containerPort: 80
+              protocol: TCP
+            - name: grafana
+              containerPort: 3000
+              protocol: TCP
+          # Set the `GF_SECURITY_ADMIN_USER` and `GF_SECURITY_ADMIN_PASSWORD` environment variables 
+          # using the Secret defined in `grafana-secret.yaml`
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: $APP_INSTANCE_NAME-grafana
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: $APP_INSTANCE_NAME-grafana
+                  key: admin-password
+          # Define a liveness and readiness probe that will hit `/api/health` using port `3000`. 
+          # To learn more about Liveness and Readiness Probes, 
+          # consult https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
+          # from the official Kubernetes docs.
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 10
+            periodSeconds: 10
+          # Define resource limits and requests of `50m` of CPU and `100Mi` of memory.
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100Mi
+            requests:
+              cpu: 50m
+              memory: 100Mi
+      # Define `configMap` volumes for the above ConfigMap files, and `volumeClaimTemplates` 
+      # for Grafana's `2Gi` Block Storage data volume, which will be mounted to `/var/lib/grafana`.
+      volumes:
+        - name: config
+          configMap:
+            name: $APP_INSTANCE_NAME-grafana-ini
+        - name: datasources
+          configMap:
+            name: $APP_INSTANCE_NAME-grafana-datasources
+        - name: dashboardproviders
+          configMap:
+            name: $APP_INSTANCE_NAME-grafana-dashboardproviders
+        - name: dashboards
+          configMap:
+            name: $APP_INSTANCE_NAME-dashboards
+  volumeClaimTemplates:
+  - metadata:
+      name: $APP_INSTANCE_NAME-grafana-data
+    spec:
+      storageClassName: do-block-storage
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "2Gi"

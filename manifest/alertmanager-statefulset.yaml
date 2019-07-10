@@ -1,0 +1,107 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: $APP_INSTANCE_NAME-alertmanager
+  labels: &Labels
+    k8s-app: alertmanager
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: alertmanager
+spec:
+  # Used to configure a stable network identity for the StatefulSet Pods 
+  # e.g. pod_name.$APP_INSTANCE_NAME-alertmanager-operated.$NAMESPACE.svc:6783
+  serviceName: "$APP_INSTANCE_NAME-alertmanager-operated"
+  # To scale the number of Alertmanager replicas, you must add `—cluster.peer` addresses 
+  # for any additional Alertmanager Pods in the `args` section of the `containers` spec. 
+  replicas: 2
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels: *Labels
+  template:
+    metadata:
+      labels: *Labels
+    spec:
+      serviceAccountName: alertmanager
+      containers:
+        - name: prometheus-alertmanager
+          # The Alertmanager container image
+          image: quay.io/prometheus/alertmanager:v0.16.0
+          imagePullPolicy: Always
+          args:
+            - --config.file=/etc/config/alertmanager.yml
+            - --storage.path=/data
+            - --web.listen-address=:9093
+            - --web.route-prefix=/
+            - --cluster.listen-address=$(POD_IP):6783
+            - --cluster.peer=$APP_INSTANCE_NAME-alertmanager-0.$APP_INSTANCE_NAME-alertmanager-operated.$NAMESPACE.svc:6783
+            - --cluster.peer=$APP_INSTANCE_NAME-alertmanager-1.$APP_INSTANCE_NAME-alertmanager-operated.$NAMESPACE.svc:6783
+            - --log.level=debug
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          ports:
+            # Configured for web access
+            - containerPort: 9093
+              name: http
+            # Configured for communication over the mesh
+            - containerPort: 6783
+              name: mesh
+          readinessProbe:
+            httpGet:
+              path: /#/status
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            # The ConfigMap containing `alertmanager.yml` will be mounted to `/etc/config`, using a Kubernetes Volume. 
+            # To learn more about mounting ConfigMap data into a Volume, 
+            # consult https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap
+            - name: config-volume
+              mountPath: /etc/config
+            - name: $APP_INSTANCE_NAME-alertmanager-data
+              mountPath: "/data"
+              subPath: ""
+          resources:
+            # Resource limits of 50 MiB of memory and 10m of CPU. 
+            # To learn more about resource limits and requests, and how to tune them, 
+            # consult https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container
+            limits:
+              cpu: 10m
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      volumes:
+        - name: config-volume
+          configMap:
+            name: $APP_INSTANCE_NAME-alertmanager-config
+      # Configures Pod anti-affinity so that Alertmanager Pods are assigned to different Nodes. 
+      # To learn more about Pod affinity and anti-affinity, consult https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                - alertmanager
+            topologyKey: "kubernetes.io/hostname"
+  # Attach `2Gi` of DigitalOcean Block Storage to each Alertmanager Pod. 
+  # This volume will be attached at the `/data` path and will be used to store Alertmanager data.
+  # To learn more about `volumeClaimTemplate`, consult https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-storage
+  volumeClaimTemplates:
+  - metadata:
+      name: $APP_INSTANCE_NAME-alertmanager-data
+    spec:
+      storageClassName: do-block-storage
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "2Gi"

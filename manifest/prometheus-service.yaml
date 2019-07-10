@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: $APP_INSTANCE_NAME-prometheus
+  labels:
+    k8s-app: prometheus
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: prometheus
+spec:
+  ports:
+    # Exposes `http` and `TCP` ports `9090` using the default `ClusterIP` Service type
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  # Ensures clients are routed to the same Prometheus Pod, which is necessary to get consistent dashboards in a highly-available setup. 
+  # To learn more about Prometheus high availability, 
+  # consult https://github.com/coreos/prometheus-operator/blob/master/Documentation/high-availability.md#prometheus
+  sessionAffinity: ClientIP
+  selector:
+    k8s-app: prometheus

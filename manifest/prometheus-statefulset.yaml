@@ -1,0 +1,98 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: $APP_INSTANCE_NAME-prometheus
+  labels: &Labels
+    k8s-app: prometheus
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: prometheus
+spec:
+  serviceName: "$APP_INSTANCE_NAME-prometheus"
+  replicas: 2
+  podManagementPolicy: "Parallel"
+  updateStrategy:
+    type: "RollingUpdate"
+  selector:
+    matchLabels: *Labels
+  template:
+    metadata:
+      labels: *Labels
+    spec:
+      serviceAccountName: prometheus
+      # `chown` the Prometheus  `/data` directory so that Prometheus can write to it
+      initContainers:
+      - name: "init-chown-data"
+        image: debian:9
+        imagePullPolicy: Always
+        command: ["chown", "-R", "65534:65534", "/data"]
+        volumeMounts:
+        - name: $APP_INSTANCE_NAME-prometheus-data
+          mountPath: /data
+          subPath: ""
+      containers:
+        - name: prometheus-server
+          # Use the `quay.io/prometheus/prometheus` image
+          image: quay.io/prometheus/prometheus
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --config.file=/etc/config/prometheus.yaml
+            - --storage.tsdb.path=/data
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.enable-lifecycle
+          ports:
+            - containerPort: 9090
+          # Probe the `/-/ready` and `/-/healthy` endpoints
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          # Based on 10 running nodes with 30 pods each
+          # Resource requests of `200m` of CPU and `1000Mi` of memory
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1000Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: $APP_INSTANCE_NAME-prometheus-data
+              mountPath: /data
+              subPath: ""
+      terminationGracePeriodSeconds: 300
+      volumes:
+        # The Prometheus ConfigMap is mounted into the Pods as a volume at `/etc/config`
+        - name: config-volume
+          configMap:
+            name: $APP_INSTANCE_NAME-prometheus-config
+      # Configures Pod anti-affinity so that Prometheus Pods are assigned to different Nodes. 
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: k8s-app
+                operator: In
+                values:
+                - prometheus
+            topologyKey: "kubernetes.io/hostname"
+  # A `volumeClaimTemplate` of `16Gi` of Block Storage is configured and used for Prometheus data storage, mounted at `/data/`
+  volumeClaimTemplates:
+  - metadata:
+      name: $APP_INSTANCE_NAME-prometheus-data
+      labels: *Labels
+    spec:
+      storageClassName: do-block-storage
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "16Gi"

@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $APP_INSTANCE_NAME-grafana-ini
+  labels:
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: grafana
+data:
+  # Grafana's main configuration file. To learn more about the configuration options available to you, 
+  # consult https://grafana.com/docs/installation/configuration
+  grafana.ini: |
+    [analytics]
+    check_for_updates = true
+    [grafana_net]
+    url = https://grafana.net
+    [log]
+    mode = console
+    [paths]
+    data = /var/lib/grafana/data
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $APP_INSTANCE_NAME-grafana-datasources
+  labels:
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+data:
+  # A file that specifies data sources for Grafana to use to populate dashboards. 
+  # To learn more about configuring this, consult https://grafana.com/docs/administration/provisioning/#datasources
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - access: proxy
+      isDefault: true
+      name: prometheus
+      type: prometheus
+      url: http://$APP_INSTANCE_NAME-prometheus:9090
+      version: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $APP_INSTANCE_NAME-grafana-dashboardproviders
+  labels:
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+data:
+  # A file that configures where Grafana should look for dashboards to load when starting up. 
+  # To learn more, consult https://grafana.com/docs/administration/provisioning/#dashboards
+  # By default, the `dashboards-configmap.yaml` ConfigMap will be mounted to `/var/lib/grafana/dashboards` which is referenced in this file.
+  dashboardproviders.yaml: |
+    apiVersion: 1
+    providers:
+    - disableDeletion: false
+      editable: true
+      folder: ""
+      name: default
+      options:
+        path: /var/lib/grafana/dashboards
+      orgId: 1
+      type: file

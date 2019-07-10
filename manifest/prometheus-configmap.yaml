@@ -1,0 +1,823 @@
+# alerts.yaml and rules.yaml generated using kubernetes-mixin (https://github.com/kubernetes-monitoring/kubernetes-mixin)
+# 
+# prometheus.yaml sourced from https://github.com/GoogleCloudPlatform/click-to-deploy/blob/master/k8s/prometheus/manifest/prometheus-configmap.yaml
+# and modified to work with DigitalOcean Kubernetes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: $APP_INSTANCE_NAME-prometheus-config
+  labels:
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: prometheus
+data:
+  # If you'd like to add your own alerts or modify existing alerts, you can edit this ConfigMap value.
+  alerts.yaml: "\"groups\": \n- \"name\": \"kubernetes-absent\"\n  \"rules\":
+    \n  - \"alert\": \"KubeAPIDown\"\n    \"annotations\": \n      \"message\": \"KubeAPI
+    has disappeared from Prometheus target discovery.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapidown\"\n
+    \   \"expr\": |\n      absent(up{job=\"apiserver\"} == 1)\n    \"for\": \"15m\"\n
+    \   \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeControllerManagerDown\"\n
+    \   \"annotations\": \n      \"message\": \"KubeControllerManager has disappeared
+    from Prometheus target discovery.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontrollermanagerdown\"\n
+    \   \"expr\": |\n      absent(up{job=\"kube-controller-manager\"} == 1)\n    \"for\":
+    \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeSchedulerDown\"\n
+    \   \"annotations\": \n      \"message\": \"KubeScheduler has disappeared from
+    Prometheus target discovery.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeschedulerdown\"\n
+    \   \"expr\": |\n      absent(up{job=\"kube-scheduler\"} == 1)\n    \"for\": \"15m\"\n
+    \   \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeletDown\"\n
+    \   \"annotations\": \n      \"message\": \"Kubelet has disappeared from Prometheus
+    target discovery.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletdown\"\n
+    \   \"expr\": |\n      absent(up{job=\"kubelet\"} == 1)\n    \"for\": \"15m\"\n
+    \   \"labels\": \n      \"severity\": \"critical\"\n- \"name\": \"kubernetes-apps\"\n
+    \ \"rules\": \n  - \"alert\": \"KubePodCrashLooping\"\n    \"annotations\": \n
+    \     \"message\": \"Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
+    }}) is restarting {{ printf \\\"%.2f\\\" $value }} times / 5 minutes.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping\"\n
+    \   \"expr\": |\n      rate(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\"}[15m])
+    * 60 * 5 > 0\n    \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubePodNotReady\"\n    \"annotations\": \n      \"message\":
+    \"Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state
+    for longer than an hour.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready\"\n
+    \   \"expr\": |\n      sum by (namespace, pod) (kube_pod_status_phase{job=\"kube-state-metrics\",
+    phase=~\"Pending|Unknown\"}) > 0\n    \"for\": \"1h\"\n    \"labels\": \n      \"severity\":
+    \"critical\"\n  - \"alert\": \"KubeDeploymentGenerationMismatch\"\n    \"annotations\":
+    \n      \"message\": \"Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment
+    }} does not match, this indicates that the Deployment has failed but has not been
+    rolled back.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentgenerationmismatch\"\n
+    \   \"expr\": |\n      kube_deployment_status_observed_generation{job=\"kube-state-metrics\"}\n
+    \       !=\n      kube_deployment_metadata_generation{job=\"kube-state-metrics\"}\n
+    \   \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  -
+    \"alert\": \"KubeDeploymentReplicasMismatch\"\n    \"annotations\": \n      \"message\":
+    \"Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched
+    the expected number of replicas for longer than an hour.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedeploymentreplicasmismatch\"\n
+    \   \"expr\": |\n      kube_deployment_spec_replicas{job=\"kube-state-metrics\"}\n
+    \       !=\n      kube_deployment_status_replicas_available{job=\"kube-state-metrics\"}\n
+    \   \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"critical\"\n  - \"alert\":
+    \"KubeStatefulSetReplicasMismatch\"\n    \"annotations\": \n      \"message\":
+    \"StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched
+    the expected number of replicas for longer than 15 minutes.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetreplicasmismatch\"\n
+    \   \"expr\": |\n      kube_statefulset_status_replicas_ready{job=\"kube-state-metrics\"}\n
+    \       !=\n      kube_statefulset_status_replicas{job=\"kube-state-metrics\"}\n
+    \   \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  -
+    \"alert\": \"KubeStatefulSetGenerationMismatch\"\n    \"annotations\": \n      \"message\":
+    \"StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }}
+    does not match, this indicates that the StatefulSet has failed but has not been
+    rolled back.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetgenerationmismatch\"\n
+    \   \"expr\": |\n      kube_statefulset_status_observed_generation{job=\"kube-state-metrics\"}\n
+    \       !=\n      kube_statefulset_metadata_generation{job=\"kube-state-metrics\"}\n
+    \   \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  -
+    \"alert\": \"KubeStatefulSetUpdateNotRolledOut\"\n    \"annotations\": \n      \"message\":
+    \"StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not
+    been rolled out.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubestatefulsetupdatenotrolledout\"\n
+    \   \"expr\": |\n      max without (revision) (\n        kube_statefulset_status_current_revision{job=\"kube-state-metrics\"}\n
+    \         unless\n        kube_statefulset_status_update_revision{job=\"kube-state-metrics\"}\n
+    \     )\n        *\n      (\n        kube_statefulset_replicas{job=\"kube-state-metrics\"}\n
+    \         !=\n        kube_statefulset_status_replicas_updated{job=\"kube-state-metrics\"}\n
+    \     )\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeDaemonSetRolloutStuck\"\n    \"annotations\": \n      \"message\":
+    \"Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace }}/{{
+    $labels.daemonset }} are scheduled and ready.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetrolloutstuck\"\n
+    \   \"expr\": |\n      kube_daemonset_status_number_ready{job=\"kube-state-metrics\"}\n
+    \       /\n      kube_daemonset_status_desired_number_scheduled{job=\"kube-state-metrics\"}
+    * 100 < 100\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeDaemonSetNotScheduled\"\n    \"annotations\": \n      \"message\":
+    \"{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
+    }} are not scheduled.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetnotscheduled\"\n
+    \   \"expr\": |\n      kube_daemonset_status_desired_number_scheduled{job=\"kube-state-metrics\"}\n
+    \       -\n      kube_daemonset_status_current_number_scheduled{job=\"kube-state-metrics\"}
+    > 0\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeDaemonSetMisScheduled\"\n    \"annotations\": \n      \"message\":
+    \"{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset
+    }} are running where they are not supposed to run.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubedaemonsetmisscheduled\"\n
+    \   \"expr\": |\n      kube_daemonset_status_number_misscheduled{job=\"kube-state-metrics\"}
+    > 0\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeCronJobRunning\"\n    \"annotations\": \n      \"message\":
+    \"CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h
+    to complete.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecronjobrunning\"\n
+    \   \"expr\": |\n      time() - kube_cronjob_next_schedule_time{job=\"kube-state-metrics\"}
+    > 3600\n    \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeJobCompletion\"\n    \"annotations\": \n      \"message\":
+    \"Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour
+    to complete.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobcompletion\"\n
+    \   \"expr\": |\n      kube_job_spec_completions{job=\"kube-state-metrics\"} -
+    kube_job_status_succeeded{job=\"kube-state-metrics\"}  > 0\n    \"for\": \"1h\"\n
+    \   \"labels\": \n      \"severity\": \"warning\"\n  - \"alert\": \"KubeJobFailed\"\n
+    \   \"annotations\": \n      \"message\": \"Job {{ $labels.namespace }}/{{ $labels.job_name
+    }} failed to complete.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubejobfailed\"\n
+    \   \"expr\": |\n      kube_job_status_failed{job=\"kube-state-metrics\"}  > 0\n
+    \   \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"warning\"\n- \"name\":
+    \"kubernetes-resources\"\n  \"rules\": \n  - \"alert\": \"KubeCPUOvercommit\"\n
+    \   \"annotations\": \n      \"message\": \"Cluster has overcommitted CPU resource
+    requests for Pods and cannot tolerate node failure.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit\"\n
+    \   \"expr\": |\n      sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)\n
+    \       /\n      sum(node:node_num_cpu:sum)\n        >\n      (count(node:node_num_cpu:sum)-1)
+    / count(node:node_num_cpu:sum)\n    \"for\": \"5m\"\n    \"labels\": \n      \"severity\":
+    \"warning\"\n  - \"alert\": \"KubeMemOvercommit\"\n    \"annotations\": \n      \"message\":
+    \"Cluster has overcommitted memory resource requests for Pods and cannot tolerate
+    node failure.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit\"\n
+    \   \"expr\": |\n      sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)\n
+    \       /\n      sum(node_memory_MemTotal_bytes)\n        >\n      (count(node:node_num_cpu:sum)-1)\n
+    \       /\n      count(node:node_num_cpu:sum)\n    \"for\": \"5m\"\n    \"labels\":
+    \n      \"severity\": \"warning\"\n  - \"alert\": \"KubeCPUOvercommit\"\n    \"annotations\":
+    \n      \"message\": \"Cluster has overcommitted CPU resource requests for Namespaces.\"\n
+    \     \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecpuovercommit\"\n
+    \   \"expr\": |\n      sum(kube_resourcequota{job=\"kube-state-metrics\", type=\"hard\",
+    resource=\"cpu\"})\n        /\n      sum(node:node_num_cpu:sum)\n        > 1.5\n
+    \   \"for\": \"5m\"\n    \"labels\": \n      \"severity\": \"warning\"\n  - \"alert\":
+    \"KubeMemOvercommit\"\n    \"annotations\": \n      \"message\": \"Cluster has
+    overcommitted memory resource requests for Namespaces.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubememovercommit\"\n
+    \   \"expr\": |\n      sum(kube_resourcequota{job=\"kube-state-metrics\", type=\"hard\",
+    resource=\"memory\"})\n        /\n      sum(node_memory_MemTotal_bytes{job=\"node-exporter\"})\n
+    \       > 1.5\n    \"for\": \"5m\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeQuotaExceeded\"\n    \"annotations\": \n      \"message\":
+    \"Namespace {{ $labels.namespace }} is using {{ printf \\\"%0.0f\\\" $value }}%
+    of its {{ $labels.resource }} quota.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubequotaexceeded\"\n
+    \   \"expr\": |\n      100 * kube_resourcequota{job=\"kube-state-metrics\", type=\"used\"}\n
+    \       / ignoring(instance, job, type)\n      (kube_resourcequota{job=\"kube-state-metrics\",
+    type=\"hard\"} > 0)\n        > 90\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\":
+    \"warning\"\n  - \"alert\": \"CPUThrottlingHigh\"\n    \"annotations\": \n      \"message\":
+    \"{{ printf \\\"%0.0f\\\" $value }}% throttling of CPU in namespace {{ $labels.namespace
+    }} for container {{ $labels.container_name }} in pod {{ $labels.pod_name }}.\"\n
+    \     \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh\"\n
+    \   \"expr\": |\n      100 * sum(increase(container_cpu_cfs_throttled_periods_total{container_name!=\"\",
+    }[5m])) by (container_name, pod_name, namespace)\n        /\n      sum(increase(container_cpu_cfs_periods_total{}[5m]))
+    by (container_name, pod_name, namespace)\n        > 25 \n    \"for\": \"15m\"\n
+    \   \"labels\": \n      \"severity\": \"warning\"\n- \"name\": \"kubernetes-storage\"\n
+    \ \"rules\": \n  - \"alert\": \"KubePersistentVolumeUsageCritical\"\n    \"annotations\":
+    \n      \"message\": \"The PersistentVolume claimed by {{ $labels.persistentvolumeclaim
+    }} in Namespace {{ $labels.namespace }} is only {{ printf \\\"%0.2f\\\" $value
+    }}% free.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeusagecritical\"\n
+    \   \"expr\": |\n      100 * kubelet_volume_stats_available_bytes{job=\"kubelet\"}\n
+    \       /\n      kubelet_volume_stats_capacity_bytes{job=\"kubelet\"}\n        <
+    3\n    \"for\": \"1m\"\n    \"labels\": \n      \"severity\": \"critical\"\n  -
+    \"alert\": \"KubePersistentVolumeFullInFourDays\"\n    \"annotations\": \n      \"message\":
+    \"Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim
+    }} in Namespace {{ $labels.namespace }} is expected to fill up within four days.
+    Currently {{ printf \\\"%0.2f\\\" $value }}% is available.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefullinfourdays\"\n
+    \   \"expr\": |\n      100 * (\n        kubelet_volume_stats_available_bytes{job=\"kubelet\"}\n
+    \         /\n        kubelet_volume_stats_capacity_bytes{job=\"kubelet\"}\n      )
+    < 15\n      and\n      predict_linear(kubelet_volume_stats_available_bytes{job=\"kubelet\"}[6h],
+    4 * 24 * 3600) < 0\n    \"for\": \"5m\"\n    \"labels\": \n      \"severity\":
+    \"critical\"\n  - \"alert\": \"KubePersistentVolumeErrors\"\n    \"annotations\":
+    \n      \"message\": \"The persistent volume {{ $labels.persistentvolume }} has
+    status {{ $labels.phase }}.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeerrors\"\n
+    \   \"expr\": |\n      kube_persistentvolume_status_phase{phase=~\"Failed|Pending\",job=\"kube-state-metrics\"}
+    > 0\n    \"for\": \"5m\"\n    \"labels\": \n      \"severity\": \"critical\"\n-
+    \"name\": \"kubernetes-system\"\n  \"rules\": \n  - \"alert\": \"KubeNodeNotReady\"\n
+    \   \"annotations\": \n      \"message\": \"{{ $labels.node }} has been unready
+    for more than an hour.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodenotready\"\n
+    \   \"expr\": |\n      kube_node_status_condition{job=\"kube-state-metrics\",condition=\"Ready\",status=\"true\"}
+    == 0\n    \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeVersionMismatch\"\n    \"annotations\": \n      \"message\":
+    \"There are {{ $value }} different semantic versions of Kubernetes components
+    running.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeversionmismatch\"\n
+    \   \"expr\": |\n      count(count by (gitVersion) (label_replace(kubernetes_build_info{job!=\"kube-dns\"},\"gitVersion\",\"$1\",\"gitVersion\",\"(v[0-9]*.[0-9]*.[0-9]*).*\")))
+    > 1\n    \"for\": \"1h\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeClientErrors\"\n    \"annotations\": \n      \"message\":
+    \"Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing
+    {{ printf \\\"%0.0f\\\" $value }}% errors.'\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclienterrors\"\n
+    \   \"expr\": |\n      (sum(rate(rest_client_requests_total{code=~\"5..\"}[5m]))
+    by (instance, job)\n        /\n      sum(rate(rest_client_requests_total[5m]))
+    by (instance, job))\n      * 100 > 1\n    \"for\": \"15m\"\n    \"labels\": \n
+    \     \"severity\": \"warning\"\n  - \"alert\": \"KubeClientErrors\"\n    \"annotations\":
+    \n      \"message\": \"Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance
+    }}' is experiencing {{ printf \\\"%0.0f\\\" $value }} errors / second.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclienterrors\"\n
+    \   \"expr\": |\n      sum(rate(ksm_scrape_error_total{job=\"kube-state-metrics\"}[5m]))
+    by (instance, job) > 0.1\n    \"for\": \"15m\"\n    \"labels\": \n      \"severity\":
+    \"warning\"\n  - \"alert\": \"KubeletTooManyPods\"\n    \"annotations\": \n      \"message\":
+    \"Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close to the limit
+    of 110.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubelettoomanypods\"\n
+    \   \"expr\": |\n      kubelet_running_pod_count{job=\"kubelet\"} > 110 * 0.9\n
+    \   \"for\": \"15m\"\n    \"labels\": \n      \"severity\": \"warning\"\n  - \"alert\":
+    \"KubeAPILatencyHigh\"\n    \"annotations\": \n      \"message\": \"The API server
+    has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{
+    $labels.resource }}.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapilatencyhigh\"\n
+    \   \"expr\": |\n      cluster_quantile:apiserver_request_latencies:histogram_quantile{job=\"apiserver\",quantile=\"0.99\",subresource!=\"log\",verb!~\"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$\"}
+    > 1\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeAPILatencyHigh\"\n    \"annotations\": \n      \"message\":
+    \"The API server has a 99th percentile latency of {{ $value }} seconds for {{
+    $labels.verb }} {{ $labels.resource }}.\"\n      \"runbook_url\": \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapilatencyhigh\"\n
+    \   \"expr\": |\n      cluster_quantile:apiserver_request_latencies:histogram_quantile{job=\"apiserver\",quantile=\"0.99\",subresource!=\"log\",verb!~\"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$\"}
+    > 4\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeAPIErrorsHigh\"\n    \"annotations\": \n      \"message\":
+    \"API server is returning errors for {{ $value }}% of requests.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh\"\n
+    \   \"expr\": |\n      sum(rate(apiserver_request_count{job=\"apiserver\",code=~\"^(?:5..)$\"}[5m]))\n
+    \       /\n      sum(rate(apiserver_request_count{job=\"apiserver\"}[5m])) * 100
+    > 3\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"critical\"\n
+    \ - \"alert\": \"KubeAPIErrorsHigh\"\n    \"annotations\": \n      \"message\":
+    \"API server is returning errors for {{ $value }}% of requests.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh\"\n
+    \   \"expr\": |\n      sum(rate(apiserver_request_count{job=\"apiserver\",code=~\"^(?:5..)$\"}[5m]))\n
+    \       /\n      sum(rate(apiserver_request_count{job=\"apiserver\"}[5m])) * 100
+    > 1\n    \"for\": \"10m\"\n    \"labels\": \n      \"severity\": \"warning\"\n
+    \ - \"alert\": \"KubeAPIErrorsHigh\"\n    \"annotations\": \n      \"message\":
+    \"API server is returning errors for {{ $value }}% of requests for {{ $labels.verb
+    }} {{ $labels.resource }} {{ $labels.subresource }}.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh\"\n
+    \   \"expr\": |\n      sum(rate(apiserver_request_count{job=\"apiserver\",code=~\"^(?:5..)$\"}[5m]))
+    by (resource,subresource,verb)\n        /\n      sum(rate(apiserver_request_count{job=\"apiserver\"}[5m]))
+    by (resource,subresource,verb) * 100 > 10\n    \"for\": \"10m\"\n    \"labels\":
+    \n      \"severity\": \"critical\"\n  - \"alert\": \"KubeAPIErrorsHigh\"\n    \"annotations\":
+    \n      \"message\": \"API server is returning errors for {{ $value }}% of requests
+    for {{ $labels.verb }} {{ $labels.resource }} {{ $labels.subresource }}.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorshigh\"\n
+    \   \"expr\": |\n      sum(rate(apiserver_request_count{job=\"apiserver\",code=~\"^(?:5..)$\"}[5m]))
+    by (resource,subresource,verb)\n        /\n      sum(rate(apiserver_request_count{job=\"apiserver\"}[5m]))
+    by (resource,subresource,verb) * 100 > 5\n    \"for\": \"10m\"\n    \"labels\":
+    \n      \"severity\": \"warning\"\n  - \"alert\": \"KubeClientCertificateExpiration\"\n
+    \   \"annotations\": \n      \"message\": \"A client certificate used to authenticate
+    to the apiserver is expiring in less than 7.0 days.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration\"\n
+    \   \"expr\": |\n      apiserver_client_certificate_expiration_seconds_count{job=\"apiserver\"}
+    > 0 and histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job=\"apiserver\"}[5m])))
+    < 604800\n    \"labels\": \n      \"severity\": \"warning\"\n  - \"alert\": \"KubeClientCertificateExpiration\"\n
+    \   \"annotations\": \n      \"message\": \"A client certificate used to authenticate
+    to the apiserver is expiring in less than 24.0 hours.\"\n      \"runbook_url\":
+    \"https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeclientcertificateexpiration\"\n
+    \   \"expr\": |\n      apiserver_client_certificate_expiration_seconds_count{job=\"apiserver\"}
+    > 0 and histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job=\"apiserver\"}[5m])))
+    < 86400\n    \"labels\": \n      \"severity\": \"critical\"\n"
+  prometheus.yaml: |-
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 1m
+    alerting:
+      alertmanagers:
+      - kubernetes_sd_configs:
+        - role: endpoints
+          namespaces:
+            names:
+            - ${NAMESPACE}
+        scheme: http
+        path_prefix: /
+        timeout: 10s
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_label_k8s_app]
+          separator: ;
+          regex: ${NAMESPACE};alertmanager
+          replacement: $1
+          action: keep
+        - source_labels: [__meta_kubernetes_endpoint_port_name]
+          separator: ;
+          regex: http
+          replacement: $1
+          action: keep
+    rule_files:
+    - /etc/config/rules.yaml
+    - /etc/config/alerts.yaml
+    scrape_configs:
+    - job_name: kubernetes-service-endpoints
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_service_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        separator: ;
+        regex: "true"
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        separator: ;
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+        separator: ;
+        regex: (https?)
+        target_label: __scheme__
+        replacement: $1
+        action: replace
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        target_label: __address__
+        replacement: $1:$2
+        action: replace
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: instance
+        replacement: $1
+        action: replace
+    - job_name: kubernetes-services
+      honor_timestamps: true
+      params:
+        module:
+        - http_2xx
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /probe
+      scheme: http
+      kubernetes_sd_configs:
+      - role: service
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_service_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: (.*)
+        target_label: __param_target
+        replacement: $1
+        action: replace
+      - separator: ;
+        regex: (.*)
+        target_label: __address__
+        replacement: blackbox
+        action: replace
+      - source_labels: [__param_target]
+        separator: ;
+        regex: (.*)
+        target_label: instance
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
+        separator: ;
+        regex: "true"
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+    - job_name: kubernetes-pods
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_pod_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        separator: ;
+        regex: "true"
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        separator: ;
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: $1
+        action: replace
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        target_label: __address__
+        replacement: $1:$2
+        action: replace
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: instance
+        replacement: $1
+        action: replace
+    - job_name: alertmanager
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_service_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?
+        target_label: __address__
+        replacement: $1:9093
+        action: replace
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_label_k8s_app]
+        separator: ;
+        regex: ${NAMESPACE};alertmanager
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+    - job_name: cadvisor
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: https
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      kubernetes_sd_configs:
+      - role: node
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_node_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?
+        target_label: __address__
+        replacement: $1:10250
+        action: replace
+      - separator: ;
+        regex: (.*)
+        target_label: __metrics_path__
+        replacement: /metrics/cadvisor
+        action: replace
+      metric_relabel_configs:
+      - source_labels: [namespace]
+        separator: ;
+        regex: ^$
+        replacement: $1
+        action: drop
+      - source_labels: [pod_name]
+        separator: ;
+        regex: ^$
+        replacement: $1
+        action: drop
+    - job_name: apiserver
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_service_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        separator: ;
+        regex: ${NAMESPACE};kubernetes
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        separator: ;
+        regex: https
+        replacement: $1
+        action: keep
+    - job_name: kube-state-metrics
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: service
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_service_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_label_k8s_app]
+        separator: ;
+        regex: ${NAMESPACE};kube-state-metrics
+        replacement: $1
+        action: keep
+    - job_name: kubelet
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: https
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+      kubernetes_sd_configs:
+      - role: node
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_node_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?
+        target_label: __address__
+        replacement: $1:10250
+        action: replace
+    - job_name: node-exporter
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_pod_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?
+        target_label: __address__
+        replacement: $1:9100
+        action: replace
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_k8s_app]
+        separator: ;
+        regex: ${NAMESPACE};node-exporter
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        separator: ;
+        regex: (.*)
+        target_label: instance
+        replacement: $1
+        action: replace
+    - job_name: prometheus
+      honor_timestamps: true
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - separator: ;
+        regex: __meta_kubernetes_pod_label_(.+)
+        replacement: $1
+        action: labelmap
+      - source_labels: [__address__]
+        separator: ;
+        regex: ([^:]+)(?::\d+)?
+        target_label: __address__
+        replacement: $1:9090
+        action: replace
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_k8s_app]
+        separator: ;
+        regex: ${NAMESPACE};prometheus
+        replacement: $1
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: pod
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_pod_name]
+        separator: ;
+        regex: (.*)
+        target_label: instance
+        replacement: $1
+        action: replace
+  rules.yaml: "\"groups\": \n- \"name\": \"k8s.rules\"\n  \"rules\": \n
+    \ - \"expr\": |\n      sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\",
+    image!=\"\", container_name!=\"\"}[5m])) by (namespace)\n    \"record\": \"namespace:container_cpu_usage_seconds_total:sum_rate\"\n
+    \ - \"expr\": |\n      sum by (namespace, pod_name, container_name) (\n        rate(container_cpu_usage_seconds_total{job=\"cadvisor\",
+    image!=\"\", container_name!=\"\"}[5m])\n      )\n    \"record\": \"namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate\"\n
+    \ - \"expr\": |\n      sum(container_memory_usage_bytes{job=\"cadvisor\", image!=\"\",
+    container_name!=\"\"}) by (namespace)\n    \"record\": \"namespace:container_memory_usage_bytes:sum\"\n
+    \ - \"expr\": |\n      sum by (namespace, label_name) (\n         sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\",
+    image!=\"\", container_name!=\"\"}[5m])) by (namespace, pod_name)\n       * on
+    (namespace, pod_name) group_left(label_name)\n         label_replace(kube_pod_labels{job=\"kube-state-metrics\"},
+    \"pod_name\", \"$1\", \"pod\", \"(.*)\")\n      )\n    \"record\": \"namespace_name:container_cpu_usage_seconds_total:sum_rate\"\n
+    \ - \"expr\": |\n      sum by (namespace, label_name) (\n        sum(container_memory_usage_bytes{job=\"cadvisor\",image!=\"\",
+    container_name!=\"\"}) by (pod_name, namespace)\n      * on (namespace, pod_name)
+    group_left(label_name)\n        label_replace(kube_pod_labels{job=\"kube-state-metrics\"},
+    \"pod_name\", \"$1\", \"pod\", \"(.*)\")\n      )\n    \"record\": \"namespace_name:container_memory_usage_bytes:sum\"\n
+    \ - \"expr\": |\n      sum by (namespace, label_name) (\n        sum(kube_pod_container_resource_requests_memory_bytes{job=\"kube-state-metrics\"}
+    * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~\"^(Pending|Running)$\"}
+    == 1)) by (namespace, pod)\n      * on (namespace, pod) group_left(label_name)\n
+    \       label_replace(kube_pod_labels{job=\"kube-state-metrics\"}, \"pod_name\",
+    \"$1\", \"pod\", \"(.*)\")\n      )\n    \"record\": \"namespace_name:kube_pod_container_resource_requests_memory_bytes:sum\"\n
+    \ - \"expr\": |\n      sum by (namespace, label_name) (\n        sum(kube_pod_container_resource_requests_cpu_cores{job=\"kube-state-metrics\"}
+    * on (endpoint, instance, job, namespace, pod, service) group_left(phase) (kube_pod_status_phase{phase=~\"^(Pending|Running)$\"}
+    == 1)) by (namespace, pod)\n      * on (namespace, pod) group_left(label_name)\n
+    \       label_replace(kube_pod_labels{job=\"kube-state-metrics\"}, \"pod_name\",
+    \"$1\", \"pod\", \"(.*)\")\n      )\n    \"record\": \"namespace_name:kube_pod_container_resource_requests_cpu_cores:sum\"\n
+    \ - \"expr\": |\n      sum(\n        label_replace(\n          label_replace(\n
+    \           kube_pod_owner{job=\"kube-state-metrics\", owner_kind=\"ReplicaSet\"},\n
+    \           \"replicaset\", \"$1\", \"owner_name\", \"(.*)\"\n          ) * on(replicaset,
+    namespace) group_left(owner_name) kube_replicaset_owner{job=\"kube-state-metrics\"},\n
+    \         \"workload\", \"$1\", \"owner_name\", \"(.*)\"\n        )\n      ) by
+    (namespace, workload, pod)\n    \"labels\": \n      \"workload_type\": \"deployment\"\n
+    \   \"record\": \"mixin_pod_workload\"\n  - \"expr\": |\n      sum(\n        label_replace(\n
+    \         kube_pod_owner{job=\"kube-state-metrics\", owner_kind=\"DaemonSet\"},\n
+    \         \"workload\", \"$1\", \"owner_name\", \"(.*)\"\n        )\n      ) by
+    (namespace, workload, pod)\n    \"labels\": \n      \"workload_type\": \"daemonset\"\n
+    \   \"record\": \"mixin_pod_workload\"\n  - \"expr\": |\n      sum(\n        label_replace(\n
+    \         kube_pod_owner{job=\"kube-state-metrics\", owner_kind=\"StatefulSet\"},\n
+    \         \"workload\", \"$1\", \"owner_name\", \"(.*)\"\n        )\n      ) by
+    (namespace, workload, pod)\n    \"labels\": \n      \"workload_type\": \"statefulset\"\n
+    \   \"record\": \"mixin_pod_workload\"\n- \"name\": \"kube-scheduler.rules\"\n
+    \ \"rules\": \n  - \"expr\": |\n      histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.99\"\n
+    \   \"record\": \"cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.99\"\n
+    \   \"record\": \"cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.99, sum(rate(scheduler_binding_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.99\"\n
+    \   \"record\": \"cluster_quantile:scheduler_binding_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.9, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.9\"\n
+    \   \"record\": \"cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.9, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.9\"\n
+    \   \"record\": \"cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.9, sum(rate(scheduler_binding_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.9\"\n
+    \   \"record\": \"cluster_quantile:scheduler_binding_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.5, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.5\"\n
+    \   \"record\": \"cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.5, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.5\"\n
+    \   \"record\": \"cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.5, sum(rate(scheduler_binding_latency_microseconds_bucket{job=\"kube-scheduler\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.5\"\n
+    \   \"record\": \"cluster_quantile:scheduler_binding_latency:histogram_quantile\"\n-
+    \"name\": \"kube-apiserver.rules\"\n  \"rules\": \n  - \"expr\": |\n      histogram_quantile(0.99,
+    sum(rate(apiserver_request_latencies_bucket{job=\"apiserver\"}[5m])) without(instance,
+    pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.99\"\n    \"record\":
+    \"cluster_quantile:apiserver_request_latencies:histogram_quantile\"\n  - \"expr\":
+    |\n      histogram_quantile(0.9, sum(rate(apiserver_request_latencies_bucket{job=\"apiserver\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.9\"\n
+    \   \"record\": \"cluster_quantile:apiserver_request_latencies:histogram_quantile\"\n
+    \ - \"expr\": |\n      histogram_quantile(0.5, sum(rate(apiserver_request_latencies_bucket{job=\"apiserver\"}[5m]))
+    without(instance, pod)) / 1e+06\n    \"labels\": \n      \"quantile\": \"0.5\"\n
+    \   \"record\": \"cluster_quantile:apiserver_request_latencies:histogram_quantile\"\n-
+    \"name\": \"node.rules\"\n  \"rules\": \n  - \"expr\": \"sum(min(kube_pod_info)
+    by (node))\"\n    \"record\": \":kube_pod_info_node_count:\"\n  - \"expr\": |\n
+    \     max(label_replace(kube_pod_info{job=\"kube-state-metrics\"}, \"pod\", \"$1\",
+    \"pod\", \"(.*)\")) by (node, namespace, pod)\n    \"record\": \"node_namespace_pod:kube_pod_info:\"\n
+    \ - \"expr\": |\n      count by (node) (sum by (node, cpu) (\n        node_cpu_seconds_total{job=\"node-exporter\"}\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     ))\n    \"record\": \"node:node_num_cpu:sum\"\n  - \"expr\": |\n      1
+    - avg(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\"}[1m]))\n
+    \   \"record\": \":node_cpu_utilisation:avg1m\"\n  - \"expr\": |\n      1 - avg
+    by (node) (\n        rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\"}[1m])\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:)\n
+    \   \"record\": \"node:node_cpu_utilisation:avg1m\"\n  - \"expr\": |\n      node:node_cpu_utilisation:avg1m\n
+    \       *\n      node:node_num_cpu:sum\n        /\n      scalar(sum(node:node_num_cpu:sum))\n
+    \   \"record\": \"node:cluster_cpu_utilisation:ratio\"\n  - \"expr\": |\n      sum(node_load1{job=\"node-exporter\"})\n
+    \     /\n      sum(node:node_num_cpu:sum)\n    \"record\": \":node_cpu_saturation_load1:\"\n
+    \ - \"expr\": |\n      sum by (node) (\n        node_load1{job=\"node-exporter\"}\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n      /\n      node:node_num_cpu:sum\n    \"record\": \"node:node_cpu_saturation_load1:\"\n
+    \ - \"expr\": |\n      1 -\n      sum(node_memory_MemFree_bytes{job=\"node-exporter\"}
+    + node_memory_Cached_bytes{job=\"node-exporter\"} + node_memory_Buffers_bytes{job=\"node-exporter\"})\n
+    \     /\n      sum(node_memory_MemTotal_bytes{job=\"node-exporter\"})\n    \"record\":
+    \":node_memory_utilisation:\"\n  - \"expr\": |\n      sum(node_memory_MemFree_bytes{job=\"node-exporter\"}
+    + node_memory_Cached_bytes{job=\"node-exporter\"} + node_memory_Buffers_bytes{job=\"node-exporter\"})\n
+    \   \"record\": \":node_memory_MemFreeCachedBuffers_bytes:sum\"\n  - \"expr\":
+    |\n      sum(node_memory_MemTotal_bytes{job=\"node-exporter\"})\n    \"record\":
+    \":node_memory_MemTotal_bytes:sum\"\n  - \"expr\": |\n      sum by (node) (\n
+    \       (node_memory_MemFree_bytes{job=\"node-exporter\"} + node_memory_Cached_bytes{job=\"node-exporter\"}
+    + node_memory_Buffers_bytes{job=\"node-exporter\"})\n        * on (namespace,
+    pod) group_left(node)\n          node_namespace_pod:kube_pod_info:\n      )\n
+    \   \"record\": \"node:node_memory_bytes_available:sum\"\n  - \"expr\": |\n      sum
+    by (node) (\n        node_memory_MemTotal_bytes{job=\"node-exporter\"}\n        *
+    on (namespace, pod) group_left(node)\n          node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_memory_bytes_total:sum\"\n  - \"expr\": |\n
+    \     (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)\n
+    \     /\n      node:node_memory_bytes_total:sum\n    \"record\": \"node:node_memory_utilisation:ratio\"\n
+    \ - \"expr\": |\n      (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)\n
+    \     /\n      scalar(sum(node:node_memory_bytes_total:sum))\n    \"record\":
+    \"node:cluster_memory_utilisation:ratio\"\n  - \"expr\": |\n      1e3 * sum(\n
+    \       (rate(node_vmstat_pgpgin{job=\"node-exporter\"}[1m])\n       + rate(node_vmstat_pgpgout{job=\"node-exporter\"}[1m]))\n
+    \     )\n    \"record\": \":node_memory_swap_io_bytes:sum_rate\"\n  - \"expr\":
+    |\n      1 -\n      sum by (node) (\n        (node_memory_MemFree_bytes{job=\"node-exporter\"}
+    + node_memory_Cached_bytes{job=\"node-exporter\"} + node_memory_Buffers_bytes{job=\"node-exporter\"})\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n      /\n      sum by (node) (\n        node_memory_MemTotal_bytes{job=\"node-exporter\"}\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_memory_utilisation:\"\n  - \"expr\": |\n
+    \     1 - (node:node_memory_bytes_available:sum / node:node_memory_bytes_total:sum)\n
+    \   \"record\": \"node:node_memory_utilisation_2:\"\n  - \"expr\": |\n      1e3
+    * sum by (node) (\n        (rate(node_vmstat_pgpgin{job=\"node-exporter\"}[1m])\n
+    \      + rate(node_vmstat_pgpgout{job=\"node-exporter\"}[1m]))\n       * on (namespace,
+    pod) group_left(node)\n         node_namespace_pod:kube_pod_info:\n      )\n    \"record\":
+    \"node:node_memory_swap_io_bytes:sum_rate\"\n  - \"expr\": |\n      avg(irate(node_disk_io_time_seconds_total{job=\"node-exporter\",device=~\"nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+\"}[1m]))\n
+    \   \"record\": \":node_disk_utilisation:avg_irate\"\n  - \"expr\": |\n      avg
+    by (node) (\n        irate(node_disk_io_time_seconds_total{job=\"node-exporter\",device=~\"nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+\"}[1m])\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_disk_utilisation:avg_irate\"\n  - \"expr\":
+    |\n      avg(irate(node_disk_io_time_weighted_seconds_total{job=\"node-exporter\",device=~\"nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+\"}[1m]))\n
+    \   \"record\": \":node_disk_saturation:avg_irate\"\n  - \"expr\": |\n      avg
+    by (node) (\n        irate(node_disk_io_time_weighted_seconds_total{job=\"node-exporter\",device=~\"nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+\"}[1m])\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_disk_saturation:avg_irate\"\n  - \"expr\":
+    |\n      max by (instance, namespace, pod, device) ((node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\"}\n
+    \     - node_filesystem_avail_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\"})\n      /
+    node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\"})\n    \"record\":
+    \"node:node_filesystem_usage:\"\n  - \"expr\": |\n      max by (instance, namespace,
+    pod, device) (node_filesystem_avail_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\"}
+    / node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\"})\n    \"record\":
+    \"node:node_filesystem_avail:\"\n  - \"expr\": |\n      sum(irate(node_network_receive_bytes_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))
+    +\n      sum(irate(node_network_transmit_bytes_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))\n
+    \   \"record\": \":node_net_utilisation:sum_irate\"\n  - \"expr\": |\n      sum
+    by (node) (\n        (irate(node_network_receive_bytes_total{job=\"node-exporter\",device!~\"veth.+\"}[1m])
+    +\n        irate(node_network_transmit_bytes_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_net_utilisation:sum_irate\"\n  - \"expr\":
+    |\n      sum(irate(node_network_receive_drop_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))
+    +\n      sum(irate(node_network_transmit_drop_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))\n
+    \   \"record\": \":node_net_saturation:sum_irate\"\n  - \"expr\": |\n      sum
+    by (node) (\n        (irate(node_network_receive_drop_total{job=\"node-exporter\",device!~\"veth.+\"}[1m])
+    +\n        irate(node_network_transmit_drop_total{job=\"node-exporter\",device!~\"veth.+\"}[1m]))\n
+    \     * on (namespace, pod) group_left(node)\n        node_namespace_pod:kube_pod_info:\n
+    \     )\n    \"record\": \"node:node_net_saturation:sum_irate\"\n  - \"expr\":
+    |\n      max(\n        max(\n          kube_pod_info{job=\"kube-state-metrics\",
+    host_ip!=\"\"}\n        ) by (node, host_ip)\n        * on (host_ip) group_right
+    (node)\n        label_replace(\n          (max(node_filesystem_files{job=\"node-exporter\",
+    mountpoint=\"/\"}) by (instance)), \"host_ip\", \"$1\", \"instance\", \"(.*):.*\"\n
+    \       )\n      ) by (node)\n    \"record\": \"node:node_inodes_total:\"\n  -
+    \"expr\": |\n      max(\n        max(\n          kube_pod_info{job=\"kube-state-metrics\",
+    host_ip!=\"\"}\n        ) by (node, host_ip)\n        * on (host_ip) group_right
+    (node)\n        label_replace(\n          (max(node_filesystem_files_free{job=\"node-exporter\",
+    mountpoint=\"/\"}) by (instance)), \"host_ip\", \"$1\", \"instance\", \"(.*):.*\"\n
+    \       )\n      ) by (node)\n    \"record\": \"node:node_inodes_free:\"\n"

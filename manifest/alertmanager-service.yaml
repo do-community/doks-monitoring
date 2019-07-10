@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: $APP_INSTANCE_NAME-alertmanager
+  labels:
+    k8s-app: alertmanager
+    app.kubernetes.io/name: $APP_INSTANCE_NAME
+    app.kubernetes.io/component: alertmanager
+spec:
+  ports:
+    - name: http
+      # Exposes port 9093 at a cluster-internal IP address
+      port: 9093
+      protocol: TCP
+      # Routes requests to port 9093 of the Alertmanager StatefulSet Pods
+      targetPort: 9093
+  selector:
+    k8s-app: alertmanager
+  type: "ClusterIP"
