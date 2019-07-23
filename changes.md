@@ -1,6 +1,6 @@
 Manifest of modifications to original [click-to-deploy](https://github.com/GoogleCloudPlatform/click-to-deploy/tree/master/k8s/prometheus) repository (`prometheus` corresponds to the click-to-deploy repo): 
 
-
+```
 Only in doks-monitoring/: .git
 Only in doks-monitoring/: .gitignore
 Only in doks-monitoring/: LICENSE
@@ -23,15 +23,16 @@ Files prometheus/manifest/prometheus-configmap.yaml and doks-monitoring/manifest
 Files prometheus/manifest/prometheus-statefulset.yaml and doks-monitoring/manifest/prometheus-statefulset.yaml differ
 Only in prometheus/: resources
 Only in prometheus/: schema.yaml
+```
 
 High-level overview of changes:
 - Use quay.io images instead of GCP Marketplace images:
-  - Prometheus: quay.io/prometheus/prometheus
-  - Alertmanager: quay.io/prometheus/alertmanager:v0.16.0
-  - Kube-state-metrics: quay.io/coreos/kube-state-metrics:v1.5.0
-  - Node-exporter: quay.io/prometheus/node-exporter:v0.17.0 
-  - Grafana: grafana/grafana:6.0.1
-  - Prometheus-init: debian:9 
+  - Prometheus: `quay.io/prometheus/prometheus:v2.11.1`
+  - Alertmanager: `quay.io/prometheus/alertmanager:v0.16.0`
+  - Kube-state-metrics: `quay.io/coreos/kube-state-metrics:v1.5.0`
+  - Node-exporter: `quay.io/prometheus/node-exporter:v0.17.0`
+  - Grafana: `grafana/grafana:6.0.1`
+  - Prometheus-init: `debian:9`
 - Modify manifests to work with these images
 - Modify prometheus.yaml Prometheus configuration in the Prometheus ConfigMap with a DOKS-specific config
 - Regenerate Grafana dashboards, Prometheus Rules, and Alerts using kubernetes-mixin

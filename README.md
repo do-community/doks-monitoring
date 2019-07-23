@@ -106,19 +106,4 @@ At this point, you should be able to access the Grafana UI. To log in, use the d
 
 ## Attribution
 
-The manifests in this repo are heavily based on and modified from Google Cloud Platform's [click-to-deploy Prometheus solution](https://github.com/GoogleCloudPlatform/click-to-deploy/tree/master/k8s/prometheus). A diff of modified files (`changes.txt`) is included in this repo, but at a high level, it contains the following changes:
-
-```shell
-- Use quay.io images instead of GCP Marketplace images:
-  - Prometheus: quay.io/prometheus/prometheus
-  - Alertmanager: quay.io/prometheus/alertmanager:v0.16.0
-  - Kube-state-metrics: quay.io/coreos/kube-state-metrics:v1.5.0
-  - Node-exporter: quay.io/prometheus/node-exporter:v0.17.0 
-  - Grafana: grafana/grafana:6.0.1
-  - Prometheus-init: debian:9 
-- Modify manifests to work with these images
-- Modify prometheus.yaml Prometheus configuration in the Prometheus ConfigMap with a DOKS-specific config
-- Regenerate Grafana dashboards, Prometheus Rules, and Alerts using kubernetes-mixin
-- Refactor and modify manifests to streamline deployment by hardcoding replica configuration, container images, and Service Accounts
-- Remove references to GCP and GCP-specific configuration
-```
+The manifests in this repo are heavily based on and modified from Google Cloud Platform's [click-to-deploy Prometheus solution](https://github.com/GoogleCloudPlatform/click-to-deploy/tree/master/k8s/prometheus). A manifest of modifications ([`changes.md`](https://github.com/do-community/doks-monitoring/blob/master/changes.txt)) is included in this repo.
