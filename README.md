@@ -106,4 +106,4 @@ At this point, you should be able to access the Grafana UI. To log in, use the d
 
 ## Attribution
 
-The manifests in this repo are heavily based on and modified from Google Cloud Platform's [click-to-deploy Prometheus solution](https://github.com/GoogleCloudPlatform/click-to-deploy/tree/master/k8s/prometheus). A manifest of modifications ([`changes.md`](https://github.com/do-community/doks-monitoring/blob/master/changes.txt)) is included in this repo.
+The manifests in this repo are heavily based on and modified from Google Cloud Platform's [click-to-deploy Prometheus solution](https://github.com/GoogleCloudPlatform/click-to-deploy/tree/master/k8s/prometheus). A manifest of modifications ([`changes.md`](https://github.com/do-community/doks-monitoring/blob/master/changes.md)) is included in this repo.
