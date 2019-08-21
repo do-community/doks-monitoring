@@ -1,7 +1,5 @@
 # DigitalOcean Kubernetes Cluster Monitoring Quickstart
 
-![DOKS Cluster Monitoring Header Image](https://community-cdn-digitalocean-com.global.ssl.fastly.net/assets/tutorials/images/large/KubernetesMonitoring_Final_v1.png)
-
 ### About this Repo
 
 This repository contains Kubernetes manifests and setup instructions for a preconfigured [DigitalOcean Kubernetes](https://www.digitalocean.com/products/kubernetes/) cluster monitoring stack. The stack consists of the following monitoring, scraping, and visualization components:
