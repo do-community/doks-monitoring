@@ -1,7 +1,5 @@
 # DigitalOcean Kubernetes Cluster Monitoring Quickstart
 
-## Community Tutorial
-
 This repository accompanies the [How to Set Up a Prometheus, Grafana and Alertmanager Monitoring Stack on DigitalOcean Kubernetes](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-prometheus-grafana-and-alertmanager-monitoring-stack-on-digitalocean-kubernetes) Community tutorial. To learn more about the stack components, their Kubernetes manifests, and how to configure them, consult the accompanying tutorial.
 
 ### About this Repo
