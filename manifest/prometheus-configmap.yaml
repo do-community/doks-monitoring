@@ -520,7 +520,7 @@ data:
         action: labelmap
       - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
         separator: ;
-        regex: ${NAMESPACE};kubernetes
+        regex: default;kubernetes
         replacement: $1
         action: keep
       - source_labels: [__meta_kubernetes_endpoint_port_name]
