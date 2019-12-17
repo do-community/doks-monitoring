@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: $APP_INSTANCE_NAME-grafana
@@ -39,8 +39,10 @@ spec:
           volumeMounts:
             - name: config
               mountPath: "/etc/grafana/"
-            - name: dashboards
-              mountPath: "/var/lib/grafana/dashboards"
+            - name: dashboards0
+              mountPath: "/var/lib/grafana/dashboards0"
+            - name: dashboards1
+              mountPath: "/var/lib/grafana/dashboards1"
             - name: datasources
               mountPath: "/etc/grafana/provisioning/datasources/"
             - name: dashboardproviders
@@ -103,9 +105,12 @@ spec:
         - name: dashboardproviders
           configMap:
             name: $APP_INSTANCE_NAME-grafana-dashboardproviders
-        - name: dashboards
+        - name: dashboards0
           configMap:
-            name: $APP_INSTANCE_NAME-dashboards
+            name: $APP_INSTANCE_NAME-dashboards0
+        - name: dashboards1
+          configMap:
+            name: $APP_INSTANCE_NAME-dashboards1
   volumeClaimTemplates:
   - metadata:
       name: $APP_INSTANCE_NAME-grafana-data

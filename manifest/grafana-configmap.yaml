@@ -57,6 +57,14 @@ data:
       folder: ""
       name: default
       options:
-        path: /var/lib/grafana/dashboards
+        path: /var/lib/grafana/dashboards0
+      orgId: 1
+      type: file
+    - disableDeletion: false
+      editable: true
+      folder: ""
+      name: default
+      options:
+        path: /var/lib/grafana/dashboards1
       orgId: 1
       type: file
